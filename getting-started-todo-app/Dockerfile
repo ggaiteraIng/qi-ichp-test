@@ -89,4 +89,4 @@ RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
 COPY backend/src ./src
 COPY --from=client-build /usr/local/app/dist ./src/static
 EXPOSE 3000
-CMD ["node", "src/index.js"]
+CMD ["node", "backend/src/index.js"]
