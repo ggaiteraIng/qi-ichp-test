@@ -5,6 +5,8 @@
 # and provides common configuration for all stages, such as the working dir.
 ###################################################
 FROM node:20 AS base
+RUN useradd gera
+USER gera
 WORKDIR /usr/local/app
 
 ################## CLIENT STAGES ##################
@@ -89,4 +91,4 @@ RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
 COPY backend/src ./src
 COPY --from=client-build /usr/local/app/dist ./src/static
 EXPOSE 3000
-CMD ["node", "backend/src/index.js"]
+CMD ["node", "src/index.js"]
