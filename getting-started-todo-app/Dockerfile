@@ -7,7 +7,7 @@
 FROM node:20 AS base
 RUN useradd gera
 USER gera
-WORKDIR /usr/local/app
+WORKDIR /home/gera/app
 
 ################## CLIENT STAGES ##################
 
@@ -19,7 +19,7 @@ WORKDIR /usr/local/app
 ###################################################
 FROM base AS client-base
 COPY client/package.json client/yarn.lock ./
-RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
+RUN --mount=type=cache,id=yarn,target=/home/gera/share/.cache/yarn \
     yarn install
 COPY client/.eslintrc.cjs client/index.html client/vite.config.js ./
 COPY client/public ./public
@@ -58,7 +58,7 @@ RUN yarn build
 ###################################################
 FROM base AS backend-dev
 COPY backend/package.json backend/yarn.lock ./
-RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
+RUN --mount=type=cache,id=yarn,target=/home/gera/share/.cache/yarn \
     yarn install --no-lockfile
 COPY backend/spec ./spec
 COPY backend/src ./src
@@ -85,10 +85,10 @@ RUN yarn test
 ###################################################
 FROM base AS final
 ENV NODE_ENV=production
-COPY --from=test /usr/local/app/package.json /usr/local/app/yarn.lock ./
-RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
+COPY --from=test /home/gera/app/package.json /home/gera/app/yarn.lock ./
+RUN --mount=type=cache,id=yarn,target=/home/gera/share/.cache/yarn \
     yarn install --production --no-lockfile
 COPY backend/src ./src
-COPY --from=client-build /usr/local/app/dist ./src/static
+COPY --from=client-build /home/gera/app/dist ./src/static
 EXPOSE 3000
 CMD ["node", "src/index.js"]
