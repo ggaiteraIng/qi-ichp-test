@@ -5,7 +5,8 @@
 # and provides common configuration for all stages, such as the working dir.
 ###################################################
 FROM node:20 AS base
-WORKDIR /usr/local/app
+USER node
+WORKDIR /home/node/local/app
 
 ################## CLIENT STAGES ##################
 
@@ -17,8 +18,9 @@ WORKDIR /usr/local/app
 ###################################################
 FROM base AS client-base
 COPY client/package.json client/yarn.lock ./
-RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
-    yarn install
+USER root
+RUN  yarn install
+USER node
 COPY client/.eslintrc.cjs client/index.html client/vite.config.js ./
 COPY client/public ./public
 COPY client/src ./src
@@ -30,6 +32,7 @@ COPY client/src ./src
 # the default command to start the Vite development server.
 ###################################################
 FROM client-base AS client-dev
+USER node
 CMD ["yarn", "dev"]
 
 ###################################################
@@ -39,6 +42,7 @@ CMD ["yarn", "dev"]
 # JS files that can be served by the backend.
 ###################################################
 FROM client-base AS client-build
+USER node
 RUN yarn build
 
 
@@ -55,9 +59,11 @@ RUN yarn build
 # there are common steps needed for each.
 ###################################################
 FROM base AS backend-dev
+USER node
 COPY backend/package.json backend/yarn.lock ./
-RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
-    yarn install --no-lockfile
+USER root
+RUN yarn install --frozen-lockfile
+USER node
 COPY backend/spec ./spec
 COPY backend/src ./src
 CMD ["yarn", "dev"]
@@ -82,13 +88,14 @@ RUN yarn test
 # the tests run (without this, the test stage would simply be skipped).
 ###################################################
 FROM base AS final
+USER node
 ENV NODE_ENV=production
-COPY --from=test /usr/local/app/package.json /usr/local/app/yarn.lock ./
-RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
-    yarn install --production --no-lockfile
-RUN useradd -m gera
-USER gera
+COPY --from=test /home/node/local/app/package.json ./
+USER root
+RUN yarn install --production
+RUN mkdir /home/node/todos && chmod -R 775 /home/node/todos
+USER node
 COPY backend/src ./src
-COPY --from=client-build /usr/local/app/dist ./src/static
+COPY --from=client-build /home/node/local/app/dist ./src/static
 EXPOSE 3000
 CMD ["node", "src/index.js"]
