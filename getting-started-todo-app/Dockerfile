@@ -62,7 +62,7 @@ FROM base AS backend-dev
 USER node
 COPY backend/package.json backend/yarn.lock ./
 USER root
-RUN yarn install --frozen-lockfile
+RUN yarn install --no-lockfile
 USER node
 COPY backend/spec ./spec
 COPY backend/src ./src
